@@ -1,19 +1,19 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Grid, InputLabel, TextField, Typography } from "@mui/material";
+import { IconMailForward } from "@tabler/icons-react";
 import { useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
-import { IconMailForward } from "@tabler/icons-react";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {} from "tabler-icons-react";
 import * as z from "zod";
 
 // Define your form schema using zod
 const checkCareGapFormSchemaSMS = z.object({
-  content: z.string(),
+  content: z.string({ required_error: "content is required" }),
 });
 
 const checkCareGapFormSchemaEmail = z.object({
-  subject: z.string(),
-  content: z.string(),
+  subject: z.string({ required_error: "Subject is required" }),
+  content: z.string({ required_error: "content is required" }),
 });
 
 // Type to represent the form data
@@ -27,14 +27,9 @@ const CheckCareGapForm = () => {
   const [isOpenAddForm, setIsOpenAddForm] = useState(false);
   const [activeTab, setActiveTab] = useState<number>(0);
   const [contentType, setContentType] = useState<contentTypes>("sms");
-  const [emailContent, setEmailContent] = useState<{
-    subject: string;
-    content: string;
-  }>({ content: "", subject: "" });
-
-  const [smsContent, setSmsContent] = useState<{ content: string }>({
-    content: "",
-  });
+  const [emailContent, setEmailContent] = useState<string>("");
+  const [emailSubject, setEmailSubject] = useState<string>("");
+  const [smsContent, setSmsContent] = useState<string>("");
 
   const { register, handleSubmit, formState, control } =
     useForm<CheckCareGapFormData>({
@@ -42,24 +37,33 @@ const CheckCareGapForm = () => {
         contentType === "email"
           ? zodResolver(checkCareGapFormSchemaEmail)
           : zodResolver(checkCareGapFormSchemaSMS),
-      defaultValues:
-        contentType === "email"
-          ? {
-              // Set default values if needed
-              subject: "Welcome to [Clinify]!",
-              content: `
+      defaultValues: {
+        // Set default values if needed
+        subject: "Welcome to [Clinify]!",
+        content: `
       Hi [Name of the Patient], \n
       [Clinify] is trying to reach you. Please respond with a reply.\n
       Thanks and regards,
       [Care Team]
       `,
-            }
-          : { content: "This is a dummy sms" },
+      },
     });
 
   const onSubmit: SubmitHandler<CheckCareGapFormData> = (data) => {
     // Handle the form submission
     console.log("Form data submitted:", data);
+    if (data.content.trim().length === 0) {
+      console.log("Please provide a content!");
+      return;
+    }
+    if (
+      "subject" in data &&
+      contentType === "email" &&
+      data.subject.trim().length === 0
+    ) {
+      console.log("Please provide a subject!");
+      return;
+    }
     // You can add further logic here, such as API calls or state updates
   };
 
@@ -156,7 +160,12 @@ const CheckCareGapForm = () => {
                   placeholder="write your subject here..."
                   size="small"
                   fullWidth
-                  {...register("subject")}
+                  {...register("subject", {
+                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                      setEmailSubject(e.target.value);
+                    },
+                    value: emailSubject,
+                  })}
                 />
               </Grid>
             )}
@@ -183,6 +192,20 @@ const CheckCareGapForm = () => {
                     fullWidth
                     multiline
                     rows={8}
+                    {...register("content", {
+                      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                        console.log("Inside content change", e.target.value);
+                        if (contentType === "email") {
+                          console.log("This is the content for email");
+                          setEmailContent(e.target.value);
+                        } else {
+                          console.log("This is the content for sms");
+                          setSmsContent(e.target.value);
+                        }
+                      },
+                      value:
+                        contentType === "email" ? emailContent : smsContent,
+                    })}
                     {...field}
                   />
                 )}

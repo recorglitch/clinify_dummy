@@ -1,4 +1,3 @@
-import { Delete } from "@mui/icons-material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Avatar, Grid, Typography } from "@mui/material";
 import Card from "@mui/material/Card";
